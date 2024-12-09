@@ -11,7 +11,10 @@ const directions = [
 ];
 
 $(document).ready(function () {
-    let currentTurn = "black";
+    let currentTurn = Math.random() < 0.5 ? "black" : "white";
+    let gameOver = false;
+
+    $(".gameover").text(`${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} player's turn`);
 
     $("td").each(function (index) {
         var x = Math.floor(index / 8);
@@ -20,11 +23,22 @@ $(document).ready(function () {
         $(this).attr("data-y", y);
 
         $(this).click(function () {
+            if (gameOver) {
+                return;
+            }
+
             if (!$(this).hasClass("occupied")) {
                 const flipped = attemptMove($(this), currentTurn);
                 if (flipped) {
                     addPiece($(this), currentTurn);
                     currentTurn = currentTurn === "black" ? "white" : "black";
+
+                    if (!hasValidMoves(currentTurn)) {
+                        $(".gameover").text(`${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} player has no valid moves. Game Over!`);
+                        gameOver = true;
+                    } else {
+                        $(".gameover").text(`${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} player's turn`);
+                    }
                 } else {
                     alert("Invalid move! You must flip at least one opponent piece.");
                 }
@@ -41,8 +55,8 @@ function initializeBoard() {
     const middlePositions = [
         { x: 3, y: 3, color: "white" },
         { x: 3, y: 4, color: "black" },
-        { x: 4, y: 3, color: "black" },
-        { x: 4, y: 4, color: "white" },
+        //{ x: 4, y: 3, color: "black" },
+        //{ x: 4, y: 4, color: "white" },
     ];
 
     middlePositions.forEach((pos) => {
@@ -55,7 +69,7 @@ function addPiece(cell, color) {
     var pieceImage = "/images/" + color + ".png";
     cell.html(`<img src="${pieceImage}" alt="${color} piece" />`);
     cell.addClass("occupied");
-    cell.attr("data-color", color); // Store the color in the cell for later reference
+    cell.attr("data-color", color);
 }
 
 function attemptMove(cell, color) {
@@ -65,7 +79,9 @@ function attemptMove(cell, color) {
     let flipped = false;
 
     directions.forEach((dir) => {
-        if (checkAndFlip(x, y, dir.dx, dir.dy, color)) {
+        const cellsToFlip = isValidMove(x, y, dir.dx, dir.dy, color);
+        if (cellsToFlip.length > 0) {
+            flipPieces(cellsToFlip, color);
             flipped = true;
         }
     });
@@ -73,9 +89,9 @@ function attemptMove(cell, color) {
     return flipped;
 }
 
-function checkAndFlip(x, y, dx, dy, color) {
-    let cellsToFlip = [];
+function isValidMove(x, y, dx, dy, color) {
     let opponentColor = color === "black" ? "white" : "black";
+    let cellsToFlip = [];
 
     let i = x + dx;
     let j = y + dy;
@@ -84,38 +100,58 @@ function checkAndFlip(x, y, dx, dy, color) {
         const nextCell = $(`td[data-x=${i}][data-y=${j}]`);
 
         if (!nextCell.hasClass("occupied")) {
-            return false; // Empty cell, no pieces to flip
+            return [];
         }
 
         if (nextCell.attr("data-color") === opponentColor) {
-            cellsToFlip.push(nextCell); // Collect opponent pieces
+            cellsToFlip.push(nextCell);
         } else if (nextCell.attr("data-color") === color) {
-            // If we hit a piece of the same color, we need at least one opponent piece between
             if (cellsToFlip.length > 0) {
-                cellsToFlip.forEach((cell) => {
-                    flipPiece(cell, color);
-                });
-                return true;
+                return cellsToFlip;
             } else {
-                return false; // No opponent pieces to flip between
+                return [];
             }
         } else {
-            return false; // Hit an empty cell or invalid sequence
+            return [];
         }
 
         i += dx;
         j += dy;
     }
 
-    return false; // No pieces were flipped in this direction
+    return [];
+}
+
+function flipPieces(cellsToFlip, color) {
+    cellsToFlip.forEach((cell) => {
+        var pieceImage = "/images/" + color + ".png";
+        cell.html(`<img src="${pieceImage}" alt="${color} piece" />`);
+        cell.attr("data-color", color);
+    });
 }
 
 function isOnBoard(x, y) {
     return x >= 0 && x < 8 && y >= 0 && y < 8;
 }
 
-function flipPiece(cell, color) {
-    var pieceImage = "/images/" + color + ".png";
-    cell.html(`<img src="${pieceImage}" alt="${color} piece" />`);
-    cell.attr("data-color", color); // Update the cell's color
+function hasValidMoves(color) {
+    let validMoveFound = false;
+
+    $("td").each(function () {
+        if (!$(this).hasClass("occupied")) {
+            const x = parseInt($(this).attr("data-x"));
+            const y = parseInt($(this).attr("data-y"));
+
+            directions.forEach((dir) => {
+                const cellsToFlip = isValidMove(x, y, dir.dx, dir.dy, color);
+                if (cellsToFlip.length > 0) {
+                    validMoveFound = true;
+                }
+            });
+        }
+
+        if (validMoveFound) return false;
+    });
+
+    return validMoveFound;
 }
