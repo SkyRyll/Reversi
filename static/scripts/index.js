@@ -49,6 +49,25 @@ $(document).ready(function () {
     });
 
     initializeBoard();
+
+    $("#newGameBtn").click(function () {
+        startNewGame();
+    });
+
+    function startNewGame() {
+        $(".gameover").text("Game Starting...");
+
+        $("td").each(function () {
+            $(this).removeClass("occupied");
+            $(this).html("");
+        });
+
+        gameOver = false;
+        currentTurn = Math.random() < 0.5 ? "black" : "white";
+        $(".gameover").text(`${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} player's turn`);
+
+        initializeBoard();
+    }
 });
 
 function initializeBoard() {
