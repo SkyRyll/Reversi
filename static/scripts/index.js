@@ -74,8 +74,8 @@ function initializeBoard() {
     const middlePositions = [
         { x: 3, y: 3, color: "white" },
         { x: 3, y: 4, color: "black" },
-        //{ x: 4, y: 3, color: "black" },
-        //{ x: 4, y: 4, color: "white" },
+        { x: 4, y: 3, color: "black" },
+        { x: 4, y: 4, color: "white" },
     ];
 
     middlePositions.forEach((pos) => {
